@@ -97,7 +97,7 @@ export class FlowSavvyApiClient {
     const formData = new FormData();
     formData.append("Email", EMAIL!);
     formData.append("Password", PASSWORD!);
-    formData.append("TimeZone", TIMEZONE!);
+    formData.append("clientTimeZone", TIMEZONE!);
 
     const config: AxiosRequestConfig = {
       headers: {
