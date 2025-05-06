@@ -14,7 +14,7 @@ export class FlowSavvyTaskService {
 
   public async updateExistingTask(
     webhookData: LinearWebhookData,
-    existingTask: any, // Consider defining a type for existingTask if it's consistent
+    existingTask: Task,
     timeProfileId: number | undefined
   ) {
     console.log(
@@ -44,13 +44,7 @@ export class FlowSavvyTaskService {
       if (value !== undefined && value !== null)
         formData.append(key, String(value));
     }
-    await this.flowSavvyClient.request(
-      "POST",
-      "Item/Edit",
-      formData,
-      true,
-      formData.getHeaders()
-    );
+    await this.flowSavvyClient.editTask(formData);
     await this.flowSavvyClient.forceRecalculate();
 
     if (
@@ -65,13 +59,7 @@ export class FlowSavvyTaskService {
         "serializedItemIdToInstanceIdsDict",
         `{"${existingTask.id}":[0]}`
       );
-      await this.flowSavvyClient.request(
-        "POST",
-        "Item/ChangeTaskCompleteStatus",
-        completeFormData,
-        true,
-        completeFormData.getHeaders()
-      );
+      await this.flowSavvyClient.changeTaskCompleteStatus(completeFormData);
     }
   }
 
@@ -85,13 +73,7 @@ export class FlowSavvyTaskService {
       `{"${existingTask.id}":[0]}`
     );
     deleteFormData.append("deleteType", "deleteAll");
-    await this.flowSavvyClient.request(
-      "POST",
-      "Item/MultipleDelete",
-      deleteFormData,
-      true,
-      deleteFormData.getHeaders()
-    );
+    await this.flowSavvyClient.deleteTask(deleteFormData);
     await this.flowSavvyClient.forceRecalculate();
   }
 
@@ -121,13 +103,7 @@ export class FlowSavvyTaskService {
       if (value !== undefined && value !== null)
         createFormData.append(key, String(value));
     }
-    await this.flowSavvyClient.request(
-      "POST",
-      "Item/Create",
-      createFormData,
-      true,
-      createFormData.getHeaders()
-    );
+    await this.flowSavvyClient.createTask(createFormData);
     await this.flowSavvyClient.forceRecalculate();
   }
 }
