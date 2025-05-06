@@ -1,7 +1,8 @@
 import { Hono, Next } from "hono";
 import { serve } from "@hono/node-server";
-import router from "./routes";
+import setupRoutes from "./routes";
 import { Context } from "hono";
+import FlowSavvy from "./classes/FlowSavvy";
 
 declare module "http" {
   export interface IncomingMessage {
@@ -11,25 +12,49 @@ declare module "http" {
 
 const app = new Hono();
 const port = process.env.PORT || 3000;
+const flowSavvyClient = new FlowSavvy();
 
 // Middleware to capture raw body
 app.use("*", async (c: Context, next: Next) => {
-  if (c.req.header("content-type")?.includes("application/json")) {
-    const rawBody = await c.req.arrayBuffer();
-    (c.req.raw as any).rawBody = Buffer.from(rawBody);
-    // Hono's `c.req.json()` consumes the body, so we need to make it available again
-    // by creating a new Request object with the already read body.
-    // This is a workaround and might need adjustment based on Hono versions or specific needs.
-    c.req.raw = new Request(c.req.raw, { body: rawBody });
+  console.log("middleware executing", c);
+  // We only need to do this for requests that are likely webhooks
+  // and where the body hasn't been read yet.
+  // Linear webhooks are typically application/json
+  if (
+    c.req.header("linear-signature") &&
+    c.req.header("content-type")?.includes("application/json")
+  ) {
+    // Check if rawBody is already populated, possibly by another middleware or an earlier run
+    // for a different route on the same request object (less common with '*' but good practice).
+    if (!(c.req.raw as any).rawBody) {
+      // Clone the request to read its body. This leaves the original request body stream intact
+      // for Hono's internal processing or subsequent c.req.json()/text() calls.
+      const rawBodyClone = await c.req.raw.clone().arrayBuffer();
+      (c.req.raw as any).rawBody = Buffer.from(rawBodyClone);
+    }
   }
   await next();
 });
 
-app.route("/", router);
+// Initialize FlowSavvy client, then setup routes and start server
+(async () => {
+  try {
+    await flowSavvyClient.initialize();
+    console.log("FlowSavvy client initialized successfully.");
 
-console.log(`Server is running on port ${port}`);
+    const linearRoutes = setupRoutes(flowSavvyClient);
+    app.route("/", linearRoutes);
 
-serve({
-  fetch: app.fetch,
-  port: Number(port),
-});
+    serve({
+      fetch: app.fetch,
+      port: Number(port),
+    });
+    console.log(`Server is running on port ${port}`);
+  } catch (error) {
+    console.error(
+      "Failed to initialize FlowSavvy client or start server:",
+      error
+    );
+    process.exit(1); // Exit if critical initialization fails
+  }
+})();

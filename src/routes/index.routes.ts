@@ -18,46 +18,49 @@ dotenv.config();
 //   "[env variables] ESTIMATION_POINT_IN_MINUTES is required"
 // );
 
-const flowSavvyClient = new FlowSavvy(); // Renamed for clarity
-const app = new Hono();
+export default function setupRoutes(flowSavvyClient: FlowSavvy) {
+  const app = new Hono();
 
-app.get("/", async (c: Context) => {
-  return c.json({
-    status: "success",
-    message: "Use this URL as Linear webhook to sync with FlowSavvy.",
-    author: "@ChrisvanChip",
+  app.get("/", async (c: Context) => {
+    return c.json({
+      status: "success",
+      message: "Use this URL as Linear webhook to sync with FlowSavvy.",
+      author: "@ChrisvanChip",
+    });
   });
-});
 
-app.post("/", verifyLinearSignature, async (c: Context) => {
-  const rawBody = await c.req.json();
-  if (!rawBody || !rawBody.data || !rawBody.data.identifier) {
-    return c.json(
-      {
-        status: "error",
-        message: "No data provided or missing identifier.",
-      },
-      400
-    );
-  }
-  const webhookData = rawBody.data as LinearWebhookData;
-  const clientPrefix = c.get("linearWebhookClientPrefix") as string | undefined;
+  app.post("/", verifyLinearSignature, async (c: Context) => {
+    const rawBody = await c.req.json();
+    if (!rawBody || !rawBody.data || !rawBody.data.identifier) {
+      return c.json(
+        {
+          status: "error",
+          message: "No data provided or missing identifier.",
+        },
+        400
+      );
+    }
+    const webhookData = rawBody.data as LinearWebhookData;
+    const clientPrefix = c.get("linearWebhookClientPrefix") as
+      | string
+      | undefined;
 
-  try {
-    await handleLinearWebhook(webhookData, clientPrefix, flowSavvyClient);
-    return c.body(null, 200); // Send success response
-  } catch (error: any) {
-    console.error(
-      "[RouteHandlerError] Error processing webhook:",
-      error.message
-    );
-    // Determine status code based on error type if possible, otherwise default to 500
-    // For now, simple 500 for any service layer error
-    return c.json(
-      { status: "error", message: error.message || "Internal Server Error" },
-      500
-    );
-  }
-});
+    try {
+      await handleLinearWebhook(webhookData, clientPrefix, flowSavvyClient);
+      return c.body(null, 200); // Send success response
+    } catch (error: any) {
+      console.error(
+        "[RouteHandlerError] Error processing webhook:",
+        error.message
+      );
+      // Determine status code based on error type if possible, otherwise default to 500
+      // For now, simple 500 for any service layer error
+      return c.json(
+        { status: "error", message: error.message || "Internal Server Error" },
+        500
+      );
+    }
+  });
 
-export default app;
+  return app;
+}
