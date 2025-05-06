@@ -1,3 +1,7 @@
 [tools]
 node = "22.15.0"
+"npm:tsx" = "4.19.4"
 pnpm = "10.10.0"
+
+[tasks.dev]
+run = "tsx src/index.ts"
