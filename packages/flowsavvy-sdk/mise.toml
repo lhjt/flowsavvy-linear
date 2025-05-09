@@ -2,4 +2,4 @@
 "npm:@openapitools/openapi-generator-cli" = "latest"
 
 [tasks.generate]
-run = "openapi-generator-cli generate -i ./spec/spec.yaml -g typescript-fetch -o . --additional-properties=npmName=flowsavvy-sdk,snapshot=true"
+run = "openapi-generator-cli generate -i ./spec/spec.yaml -g typescript-fetch -o . --additional-properties=npmName=flowsavvy-sdk,supportsES6=true"

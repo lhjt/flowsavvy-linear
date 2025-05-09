@@ -23,6 +23,9 @@ importers:
       dotenv:
         specifier: 16.5.0
         version: 16.5.0
+      flowsavvy-sdk:
+        specifier: workspace:*
+        version: link:../../packages/flowsavvy-sdk
       form-data:
         specifier: 4.0.2
         version: 4.0.2
@@ -41,6 +44,12 @@ importers:
         version: 10.9.2(@types/node@22.15.12)(typescript@5.8.3)
       typescript:
         specifier: 5.8.3
+        version: 5.8.3
+
+  packages/flowsavvy-sdk:
+    devDependencies:
+      typescript:
+        specifier: ^4.0 || ^5.0
         version: 5.8.3
 
 packages:

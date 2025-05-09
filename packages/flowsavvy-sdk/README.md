@@ -1,4 +1,4 @@
-## flowsavvy-sdk@v1-SNAPSHOT.202505092200
+## flowsavvy-sdk@v1
 
 This generator creates TypeScript/JavaScript client that utilizes [Fetch API](https://fetch.spec.whatwg.org/). The generated Node module can be used in the following environments:
 
@@ -36,7 +36,7 @@ navigate to the folder of your consuming project and run one of the following co
 _published:_
 
 ```
-npm install flowsavvy-sdk@v1-SNAPSHOT.202505092200 --save
+npm install flowsavvy-sdk@v1 --save
 ```
 
 _unPublished (not recommended):_

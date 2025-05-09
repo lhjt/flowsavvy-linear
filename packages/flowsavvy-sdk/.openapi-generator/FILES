@@ -1,6 +1,5 @@
 .gitignore
 .npmignore
-.openapi-generator-ignore
 README.md
 package.json
 src/apis/AccountApi.ts
@@ -56,4 +55,5 @@ src/models/UserActionHistory.ts
 src/models/UserSettings.ts
 src/models/index.ts
 src/runtime.ts
+tsconfig.esm.json
 tsconfig.json
