@@ -1,0 +1,1391 @@
+openapi: 3.0.0
+info:
+  title: FlowSavvy API
+  version: v1
+  description: API for managing tasks, events, and schedules on FlowSavvy.
+servers:
+  - url: https://my.flowsavvy.app
+    description: Production server
+
+components:
+  schemas:
+    # --- Request Schemas ---
+    LoginRequest:
+      type: object
+      properties:
+        Email:
+          type: string
+          format: email
+          description: User's email address.
+          example: user@example.com
+        Password:
+          type: string
+          format: password
+          description: User's password.
+          example: "**********"
+        clientTimeZone:
+          type: string
+          description: Client's timezone.
+          example: "Australia/Sydney"
+      required:
+        - Email
+        - Password
+
+    ItemCore:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Item ID. 0 for new items.
+          example: 0
+        InstanceID:
+          type: integer
+          description: Instance ID of the item, if applicable.
+          example: 0
+        Notes:
+          type: string
+          format: html # Can be HTML content
+          description: Notes for the item.
+          example: "<p>Example notes for the task.</p>"
+        DueDateTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: Due date and time for the item.
+          example: "2025-05-09T23:59:00"
+        StartDateTime:
+          type: string
+          format: date-time
+          description: Start date and time for the item.
+          example: "2025-05-09T19:00:00"
+        EndDateTime:
+          type: string
+          format: date-time
+          description: End date and time for the item.
+          example: "2025-05-09T20:30:00"
+        DontStartUntil:
+          type: string
+          format: date-time
+          description: Do not start until this date and time.
+          example: "0001-01-01T00:00:00"
+        TimeZone:
+          type: string
+          description: Timezone for the item.
+          example: "Floating"
+        IsAutoIgnored:
+          type: boolean
+          description: Whether the item is auto-ignored.
+          example: false
+        Title:
+          type: string
+          description: Title of the item.
+          example: "Example Task Title"
+        ItemType:
+          type: string
+          description: Type of the item (e.g., task, event).
+          example: "task"
+        ProgressHours:
+          type: integer
+          description: Progress in hours.
+          example: 0
+        ProgressMinutes:
+          type: integer
+          description: Progress in minutes.
+          example: 0
+        minLengthTotalMinutes:
+          type: integer
+          description: Minimum length of the item in total minutes.
+          example: 90
+        BufferTimeBeforeHours:
+          type: integer
+          example: 0
+        BufferTimeBeforeMinutes:
+          type: integer
+          example: 5
+        BufferTimeAfterHours:
+          type: integer
+          example: 0
+        BufferTimeAfterMinutes:
+          type: integer
+          example: 5
+        Busy:
+          type: boolean
+          description: Whether the item marks time as busy.
+          example: true
+        FixedTime:
+          type: boolean
+          description: Whether the item has a fixed time.
+          example: false
+        AllDay:
+          type: boolean
+          description: Whether the item is an all-day event.
+          example: false
+        RepeatType:
+          type: string
+          description: Repeat type (e.g., Never, Daily, Weekly).
+          example: "Never"
+        Interval:
+          type: integer
+          example: 1
+        Sunday:
+          type: boolean
+          example: false
+        Monday:
+          type: boolean
+          example: false
+        Tuesday:
+          type: boolean
+          example: false
+        Wednesday:
+          type: boolean
+          example: false
+        Thursday:
+          type: boolean
+          example: false
+        Friday:
+          type: boolean
+          example: false
+        Saturday:
+          type: boolean
+          example: false
+        MonthlyType:
+          type: string
+          example: "Each..."
+        Dates:
+          type: string
+          nullable: true
+          example: ""
+        MonthOrdinal:
+          type: integer
+          example: 0
+        WeekDay:
+          type: integer
+          example: 0
+        EndRepeatType:
+          type: string
+          example: "Never"
+        EndRepeatDate:
+          type: string
+          format: date-time
+          example: "2025-05-16T00:00:00"
+        NumOccurrences:
+          type: integer
+          example: 1
+        priority:
+          type: integer
+          description: Priority of the item.
+          example: 1
+        customColor:
+          type: string
+          nullable: true
+          description: Custom color for the item (hex code).
+          example: "#ef6c00"
+        calendarId:
+          type: integer
+          description: ID of the calendar this item belongs to.
+          example: 110833
+        timeProfileId:
+          type: integer
+          nullable: true
+          description: ID of the time profile associated with this item.
+          example: 266524
+        tagIds:
+          type: string # In HAR for POST requests, it's a single string, comma-separated IDs
+          description: Comma-separated string of tag IDs for create/update.
+          example: "14303,14304"
+        Location:
+          type: string
+          nullable: true
+          example: ""
+
+    ItemCreateRequest:
+      allOf:
+        - $ref: '#/components/schemas/ItemCore'
+
+    ItemEditRequest:
+      allOf:
+        - $ref: '#/components/schemas/ItemCore'
+      properties:
+        id: # Override to make it required for edit
+          type: integer
+          description: ID of the item to edit.
+          example: 9909449
+      required:
+        - id
+
+    MultipleDeleteRequest:
+      type: object
+      properties:
+        serializedItemIdToInstanceIdsDict:
+          type: string
+          description: A JSON string representing a dictionary of item IDs to instance IDs.
+          example: '{"9909449":[0]}'
+        deleteType:
+          type: string
+          description: Type of delete operation (e.g., deleteAll).
+          example: "deleteAll"
+      required:
+        - serializedItemIdToInstanceIdsDict
+        - deleteType
+
+    LogAmplitudeEventRequest:
+      type: object
+      properties:
+        eventName:
+          type: string
+          example: "identify"
+        date:
+          type: string
+          format: date-time
+          example: "2025-05-09T08:10:59.854Z"
+      required:
+        - eventName
+        - date
+
+    RecalculateRequest:
+      type: object
+      properties:
+        contentType:
+          type: string
+          example: "schedule"
+        startDate:
+          type: string
+          format: date
+          example: "2025-05-02"
+        isResolutionCenterOpen:
+          type: boolean
+          example: false
+        force:
+          type: boolean
+          example: true
+      required:
+        - contentType
+        - startDate
+        - isResolutionCenterOpen
+        - force
+
+    ChangePartialCompleteStatusRequest:
+      type: object
+      properties:
+        itemId:
+          type: integer
+          description: The ID of the item.
+          example: 9911002
+        instanceId:
+          type: integer
+          description: The instance ID of the item.
+          example: 0
+        scheduleItemId:
+          type: integer
+          description: The ID of the specific schedule item part being marked.
+          example: 0 # Can be 0 if not specific to a split part
+      required:
+        - itemId
+        - instanceId
+        - scheduleItemId
+
+    # --- Response Schemas ---
+    LoginSuccessResponse: # Assuming a simple success, actual auth via cookies
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Login successful" # Placeholder, actual response body was minimal
+
+    InboxItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 114478
+        Title:
+          type: string
+          example: "Respond to Example User"
+      required:
+        - id
+        - Title
+
+    InboxItemsResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InboxItem'
+
+    DifferentVersions:
+      type: object
+      properties:
+        Items:
+          type: string
+          format: date-time
+          example: "2025-05-09T08:17:10.0620398Z"
+        Calendars:
+          type: string
+          format: date-time
+          example: "2025-05-09T04:38:19.420Z"
+        Subscription:
+          type: string
+          format: date-time
+          example: "2025-04-12T12:25:12.421Z"
+        # ... other entity types like Inbox, ItemSettings, Tags, UserSettings, TimeProfiles
+      additionalProperties:
+        type: string
+        format: date-time
+
+    ItemCreateResponse:
+      type: object
+      properties:
+        newItemId:
+          type: integer
+          example: 9909449
+        numRepeatingAutoScheduledTasks:
+          type: integer
+          nullable: true
+        differentVersions:
+          $ref: '#/components/schemas/DifferentVersions'
+        numAutoScheduledTasksAdded:
+          type: integer
+          nullable: true
+
+    ModifiedScheduleItem:
+      type: object
+      description: Represents a schedule item that has been modified, often returned in diffs.
+      properties:
+        ItemID:
+          type: integer
+          description: Often 0 if the primary ID is within the nested Item object.
+          example: 0
+        Item:
+          $ref: '#/components/schemas/ItemFull'
+        InstanceID:
+          type: integer
+          example: 0
+        StartTime:
+          type: string
+          format: date-time
+          example: "2025-05-09T19:35:00"
+        EndTime:
+          type: string
+          format: date-time
+          example: "2025-05-09T21:05:00"
+        Color:
+          type: string
+          example: "green"
+        ThisPartCompleted:
+          type: boolean
+          example: true
+        InstanceStartDateTime:
+          type: string
+          format: date-time
+          example: "2025-05-09T19:35:00"
+        InstanceEndDateTime:
+          type: string
+          format: date-time
+          example: "2025-05-09T21:05:00"
+        id:
+          type: integer
+          description: The ID of this specific schedule item instance/part.
+          example: 0
+
+    ScheduleItemDiff:
+      type: object
+      properties:
+        deletedScheduleItemIds:
+          type: array
+          items:
+            type: integer
+        newOrModifiedScheduleItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModifiedScheduleItem'
+        deletedItemIds:
+          type: array
+          items:
+            type: integer
+
+    ItemEditResponse:
+      type: object
+      properties:
+        numRepeatingAutoScheduledTasks:
+          type: integer
+          nullable: true
+        itemShiftInfoMap:
+          type: object
+          additionalProperties: true # Or define specific structure if known
+        differentVersions:
+          $ref: '#/components/schemas/DifferentVersions'
+        scheduleItemDiff:
+          $ref: '#/components/schemas/ScheduleItemDiff'
+
+    ItemFull: # Based on GET /api/Item/Edit response and other detailed item views
+      allOf:
+        - $ref: '#/components/schemas/ItemCore'
+      properties:
+        # Properties from ItemCore are inherited
+        # tagIds is overridden here for response representation
+        tagIds:
+          type: array
+          items:
+            type: integer
+          example: [14303]
+          description: Array of tag IDs for display.
+        Completed:
+          type: boolean
+          example: false
+        AccessLevel:
+          type: integer
+          example: 2
+        Color:
+          type: string
+          nullable: true
+          description: Resolved color of the item (e.g., "red", "green").
+          example: "red"
+        Changed:
+          type: boolean
+          example: false
+        upstreamItemInfos:
+          type: array
+          items:
+            type: object # Define if structure is known
+          example: []
+        downstreamItemInfos:
+          type: array
+          items:
+            type: object # Define if structure is known
+          example: []
+        SortTime:
+          type: string
+          format: date-time
+          nullable: true
+        ParentItemID:
+          type: integer
+          nullable: true
+        ParentItem:
+          type: object # Define if structure is known
+          nullable: true
+        LastMovedUtc:
+          type: string
+          format: date-time
+          example: "2025-04-29T16:30:22.444859"
+
+    SchedulingStatusInfo:
+      type: object
+      properties:
+        bufferDays:
+          type: integer
+          example: 3
+        missedDependencyTitle:
+          type: string
+          nullable: true
+        specialSchedulingCase:
+          type: integer
+          example: 0
+
+    ScheduleItemData: # From GET /api/Item/Edit response's scheduleItems array
+      type: object
+      properties:
+        ItemID:
+          type: integer
+          example: 9134780
+        Item:
+          type: object # In GET /api/Item/Edit, this was null in the example
+          nullable: true # Could be a reference to ItemFull or a simplified version
+        InstanceID:
+          type: integer
+          example: 0
+        StartTime:
+          type: string
+          format: date-time
+          example: "2025-05-09T19:25:00"
+        EndTime:
+          type: string
+          format: date-time
+          example: "2025-05-09T20:10:00"
+        Color:
+          type: string
+          example: "red"
+        ThisPartCompleted:
+          type: boolean
+          example: false
+        InstanceStartDateTime:
+          type: string
+          format: date-time
+          example: "2025-04-08T14:00:00"
+        InstanceEndDateTime:
+          type: string
+          format: date-time
+          example: "2025-04-08T14:45:00"
+        id:
+          type: integer
+          example: 336955196
+
+    ItemEditGetDataResponse: # Response for GET /api/Item/Edit
+      type: object
+      properties:
+        item:
+          $ref: '#/components/schemas/ItemFull'
+        schedulingStatusInfo:
+          $ref: '#/components/schemas/SchedulingStatusInfo'
+        scheduleItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleItemData'
+        repeatingAutoScheduledTaskIds:
+          type: array
+          items:
+            type: integer
+          nullable: true
+
+    MultipleDeleteResponse:
+      type: object
+      properties:
+        differentVersions:
+          $ref: '#/components/schemas/DifferentVersions'
+        itemShiftInfoMap:
+          type: object
+          additionalProperties: true
+
+    ScheduleItem: # From GET /api/Schedule/GetSchedule
+      type: object
+      properties:
+        ItemID:
+          type: integer
+        Item:
+          $ref: '#/components/schemas/ItemFull' # Or a simplified version
+        InstanceID:
+          type: integer
+        StartTime:
+          type: string
+          format: date-time
+        EndTime:
+          type: string
+          format: date-time
+        Color:
+          type: string
+          nullable: true
+        ThisPartCompleted:
+          type: boolean
+        InstanceStartDateTime:
+          type: string
+          format: date-time
+        InstanceEndDateTime:
+          type: string
+          format: date-time
+        id:
+          type: integer
+
+    AllDayEvent: # Placeholder, define based on actual structure if available
+      type: object
+      properties:
+        id:
+          type: integer
+        Title:
+          type: string
+        StartDate:
+          type: string
+          format: date
+        EndDate:
+          type: string
+          format: date
+        Color:
+          type: string
+          nullable: true
+
+    ScheduleResponseData:
+      type: object
+      properties:
+        startDate:
+          type: string
+          format: date-time
+        horizon:
+          type: string
+          format: date-time
+        scheduleItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleItem'
+        allDayEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllDayEvent'
+        # ... other fields if present in decoded JSON
+
+    GetScheduleResponse:
+      type: object
+      properties:
+        scheduleResponse:
+          $ref: '#/components/schemas/ScheduleResponseData'
+
+    TaskItem: # Based on GET /api/Schedule/GetToDoListContent, similar to ItemFull
+      allOf:
+        - $ref: '#/components/schemas/ItemFull'
+
+    ToDoListResponseData:
+      type: object
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskItem'
+        oldCompletedTasksHidden:
+          type: boolean
+        hasNextPage:
+          type: boolean
+        hasPreviousPage:
+          type: boolean
+        repeatingAutoScheduledTaskIds:
+          type: array
+          items:
+            type: integer
+          nullable: true
+        tasksMissingDeadlines:
+          type: object
+          additionalProperties:
+            type: boolean
+          example: {"9134780,0": false}
+
+    GetToDoListContentResponse:
+      type: object
+      properties:
+        toDoListResponse:
+          $ref: '#/components/schemas/ToDoListResponseData'
+
+    SyncInfo:
+      type: object
+      properties:
+        syncState:
+          type: string
+          example: "synced"
+        lastSyncedInAppTime:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-05-09T18:09:52.4213479"
+        calendarAccountSyncStates:
+          type: object
+          additionalProperties:
+            type: string
+          example: {"25766": "synced"}
+
+    GetUpdatesResponse:
+      type: object
+      properties:
+        syncInfo:
+          $ref: '#/components/schemas/SyncInfo'
+        differentVersions:
+          $ref: '#/components/schemas/DifferentVersions'
+
+    CalendarAccount:
+      type: object
+      properties:
+        provider:
+          type: string
+          example: "google"
+        accountEmail:
+          type: string
+          format: email
+          example: "user_account@example.com" # PII Masked
+        syncState:
+          type: string
+          example: "synced"
+        hasOptedInTo2WaySync:
+          type: boolean
+          example: false
+        id:
+          type: integer
+          example: 25766
+
+    Calendar:
+      type: object
+      properties:
+        calendarAccountId:
+          type: integer
+          example: 25766
+        Title:
+          type: string
+          example: "Personal"
+        Color:
+          type: string
+          example: "#9fc6e7"
+        Hidden:
+          type: boolean
+          example: false
+        Source:
+          type: string
+          example: "google"
+        sourceUrl:
+          type: string
+          nullable: true
+        refreshRate:
+          type: integer
+          example: 0
+        syncId:
+          type: string
+          example: "primary_calendar_id@example.com" # PII Masked
+        AccessLevel:
+          type: integer
+          example: 2
+        SyncStatus:
+          type: string
+          example: "synced"
+        id:
+          type: integer
+          example: 110833
+
+    UserSettings:
+      type: object
+      properties:
+        autoRecalculate:
+          type: boolean
+        workloadDistribution:
+          type: string
+        bufferDays:
+          type: integer
+        weeksAhead:
+          type: integer
+        weekStartType:
+          type: integer
+        use24HourTime:
+          type: boolean
+        showCompletedTasks:
+          type: boolean
+        timeZoneDefault:
+          type: string
+        timeZone:
+          type: string
+        detectTimeZoneChanges:
+          type: boolean
+        theme:
+          type: string
+
+    Subscription:
+      type: object
+      properties:
+        hasClaimedFreeTrial:
+          type: boolean
+        isLifetime:
+          type: boolean
+        isPro:
+          type: boolean
+        store:
+          type: string
+        expiresUtc:
+          type: string
+          format: date-time
+
+    OnboardingInfo:
+      type: object
+      properties:
+        onboardingStage:
+          type: string
+          nullable: true
+        numAutoScheduledTasksAdded:
+          type: integer
+          nullable: true
+        completedSteps:
+          type: array
+          items:
+            type: string # Or more specific if known
+          nullable: true
+
+    TimeProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        Title:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        identityUserId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+          example: "user@example.com" # PII Masked
+        userHash:
+          type: string
+          example: "USER_HASH_PLACEHOLDER" # PII Masked
+        isEmailConfirmed:
+          type: boolean
+        dateCreatedUtc:
+          type: string
+          format: date-time
+        actionHistory:
+          type: object
+          properties:
+            HasDismissedReorderHint:
+              type: boolean
+            HasDismissedCopySchedulingHoursTip:
+              type: boolean
+            HasDismissedAestheticHardUpdate:
+              type: boolean
+
+    ItemSettings:
+      type: object
+      properties:
+        moreOptionsExpanded:
+          type: boolean
+        splittable:
+          type: boolean
+        minLengthTotalMinutes:
+          type: integer
+        bufferTimeBeforeHours:
+          type: integer
+        bufferTimeBeforeMinutes:
+          type: integer
+        bufferTimeAfterHours:
+          type: integer
+        bufferTimeAfterMinutes:
+          type: integer
+        durationTotalMinutes:
+          type: integer
+        useSmartColorCoding:
+          type: boolean
+
+    FeatureFlagOverrideInfo:
+      type: object
+      properties:
+        aesthetic:
+          type: string
+          example: "new"
+
+    InitialDataResponse:
+      type: object
+      properties:
+        calendarAccounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalendarAccount'
+        calendars:
+          type: array
+          items:
+            $ref: '#/components/schemas/Calendar'
+        defaultCalendarID:
+          type: integer
+        userSettings:
+          $ref: '#/components/schemas/UserSettings'
+        clientToAppOffsetMilliseconds:
+          type: integer
+        colors:
+          type: array
+          items:
+            type: string
+        differentVersions:
+          $ref: '#/components/schemas/DifferentVersions'
+        subscription:
+          $ref: '#/components/schemas/Subscription'
+        onboardingInfo:
+          $ref: '#/components/schemas/OnboardingInfo'
+        defaultTimeProfileId:
+          type: integer
+        timeProfiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeProfile'
+        user:
+          $ref: '#/components/schemas/User'
+        itemSettings:
+          $ref: '#/components/schemas/ItemSettings'
+        featureFlagOverrideInfo:
+          $ref: '#/components/schemas/FeatureFlagOverrideInfo'
+
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 14303
+        name:
+          type: string
+          example: "Example Tag"
+        color:
+          type: string
+          example: "var(--text-yellow)"
+
+    TagListResponse:
+      type: object
+      properties:
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+
+    RecalculateResponse:
+      type: object
+      properties:
+        displayDTOs:
+          type: object
+          properties:
+            scheduleResponse:
+              $ref: '#/components/schemas/ScheduleResponseData'
+            toDoListResponse:
+              $ref: '#/components/schemas/ToDoListResponseData'
+            # ... other DTOs if present
+        syncInfo:
+          $ref: '#/components/schemas/SyncInfo'
+        differentVersions:
+          $ref: '#/components/schemas/DifferentVersions'
+        itemShiftInfoMap:
+          type: object
+          additionalProperties: true
+
+    IsAuthenticatedResponse:
+      type: object
+      properties:
+        isAuthenticated:
+          type: boolean
+
+    ItemShiftInfoMapValue:
+      type: object
+      properties:
+        oldInstanceIdsToNewItems:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ItemFull'
+          example:
+            "0":
+              # Example of ItemFull would go here, too verbose for this spot
+              # See ItemFull schema for structure
+              id: 9911002
+              Title: "Test task"
+              Completed: true
+        instanceIdShiftInfo:
+          type: object # Structure unknown from HAR, appears nullable
+          nullable: true
+
+    ChangePartialCompleteStatusResponse:
+      type: object
+      properties:
+        wholeTaskCompleted:
+          type: boolean
+          example: false
+        itemShiftInfoMap:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ItemShiftInfoMapValue'
+          example:
+            "9911002": # Item ID as key
+              # ItemShiftInfoMapValue example here
+              oldInstanceIdsToNewItems:
+                "0": # Instance ID as key
+                  # ItemFull example here
+                  id: 9911002
+                  Title: "Test task"
+                  Completed: true
+                  # ... other ItemFull fields
+              instanceIdShiftInfo: null
+        differentVersions:
+          $ref: '#/components/schemas/DifferentVersions'
+        scheduleItemDiff:
+          $ref: '#/components/schemas/ScheduleItemDiff'
+
+    CalendarInfoResponse:
+      type: object
+      properties:
+        calendars:
+          type: array
+          items:
+            $ref: '#/components/schemas/Calendar'
+        calendarAccounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalendarAccount'
+        defaultCalendarID:
+          type: integer
+          example: 110833
+
+  securitySchemes:
+    cookieAuthIdentity:
+      type: apiKey
+      in: cookie
+      name: Identity.Cookie
+      description: Main session cookie set after login.
+    cookieAuthAntiforgery:
+      type: apiKey
+      in: cookie
+      name: .AspNetCore.Antiforgery.lQyFYtd3Sfw # Name can vary, this is an example
+      description: Antiforgery cookie, value should match x-csrf-token if used.
+    csrfTokenHeader:
+      type: apiKey
+      in: header
+      name: x-csrf-token
+      description: CSRF token obtained from /api/Schedule/AntiForgeryToken.
+
+security:
+  - cookieAuthIdentity: []
+  - cookieAuthAntiforgery: []
+  - csrfTokenHeader: []
+
+paths:
+  /api/Account/Login:
+    post:
+      summary: Logs in a user
+      tags:
+        - Account
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful. Auth cookies are set.
+          content:
+            application/json:
+              schema:
+                type: object # Minimal response body, auth is via cookies
+                properties:
+                  message:
+                    type: string
+                    example: "Login successful"
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: Identity.Cookie={{IDENTITY_COOKIE_VALUE}}; path=/; secure; samesite=strict; httponly
+  /api/Schedule/AntiForgeryToken:
+    get:
+      summary: Retrieves an AntiForgeryToken
+      tags:
+        - Schedule
+      responses:
+        '200':
+          description: Successfully retrieved AntiForgeryToken. The token is in the HTML body and also set as a cookie.
+          content:
+            text/html:
+              schema:
+                type: string
+                example: "<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"{{CSRF_TOKEN_VALUE}}\" />"
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: .AspNetCore.Antiforgery.lQyFYtd3Sfw={{ANTIFORGERY_COOKIE_VALUE}}; path=/; samesite=strict; httponly
+  /api/schedule/isAuthenticated:
+    get:
+      summary: Checks if the current user is authenticated
+      tags:
+        - Schedule
+      responses:
+        '200':
+          description: Authentication status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IsAuthenticatedResponse'
+  /api/Schedule/InitialData:
+    get:
+      summary: Gets initial data for the schedule view
+      tags:
+        - Schedule
+      parameters:
+        - name: clientTimeZone
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "Australia/Sydney"
+      responses:
+        '200':
+          description: Initial schedule data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitialDataResponse'
+  /api/Schedule/GetSchedule:
+    get:
+      summary: Gets the schedule items
+      tags:
+        - Schedule
+      parameters:
+        - name: scheduleViewType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [7days, 1day, list] # Assuming based on '7days' example
+          example: "7days"
+        # Other potential query params like startDate, endDate if applicable
+      responses:
+        '200':
+          description: Schedule data
+          content:
+            application/json: # Note: HAR shows base64, but actual is JSON
+              schema:
+                $ref: '#/components/schemas/GetScheduleResponse'
+  /api/Schedule/GetToDoListContent:
+    get:
+      summary: Gets ToDo list content
+      tags:
+        - Schedule
+      parameters:
+        - name: toDoListType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [ToDo, Done]
+          example: "ToDo"
+        - name: calendarFilterId
+          in: query
+          schema:
+            type: integer
+          example: -1
+        - name: tagFilterId
+          in: query
+          schema:
+            type: integer
+          example: -1
+        - name: isMissingDeadlineFilterOn
+          in: query
+          schema:
+            type: boolean
+          example: true
+        - name: getItemsAfterCursor
+          in: query
+          schema:
+            type: boolean
+          example: true
+        - name: takeFirst
+          in: query
+          schema:
+            type: boolean
+          example: true
+        - name: batchSize
+          in: query
+          schema:
+            type: integer
+          example: 50
+      responses:
+        '200':
+          description: ToDo list content
+          content:
+            application/json: # Note: HAR shows base64, but actual is JSON
+              schema:
+                $ref: '#/components/schemas/GetToDoListContentResponse'
+  /api/Schedule/GetUpdates:
+    get:
+      summary: Gets updates for various entities based on last known versions
+      tags:
+        - Schedule
+      parameters:
+        - name: Items
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: Calendars
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: Subscription
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: Inbox
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: ItemSettings
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: Tags
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: UserSettings
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: TimeProfiles
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Sync information and differing versions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUpdatesResponse'
+  /api/Schedule/Recalculate:
+    post:
+      summary: Recalculates the schedule
+      tags:
+        - Schedule
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecalculateRequest'
+      responses:
+        '200':
+          description: Recalculated schedule and ToDo list data
+          content:
+            application/json: # Note: HAR shows base64, but actual is JSON
+              schema:
+                $ref: '#/components/schemas/RecalculateResponse'
+  /api/Schedule/LogAmplitudeEvent:
+    post:
+      summary: Logs an event to Amplitude
+      tags:
+        - Schedule
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogAmplitudeEventRequest'
+      responses:
+        '200':
+          description: Event logged successfully (empty response body)
+  /api/Inbox/Items:
+    get:
+      summary: Gets inbox items
+      tags:
+        - Inbox
+      responses:
+        '200':
+          description: List of inbox items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboxItemsResponse'
+  /api/Item/Create:
+    post:
+      summary: Creates a new item (task or event)
+      tags:
+        - Item
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ItemCreateRequest'
+      responses:
+        '200':
+          description: Item created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemCreateResponse'
+  /api/Item/Edit:
+    get:
+      summary: Gets an item for editing
+      tags:
+        - Item
+      parameters:
+        - name: itemId
+          in: query
+          required: true
+          schema:
+            type: integer
+          example: 9134780
+        - name: instanceId
+          in: query
+          required: true
+          schema:
+            type: integer
+          example: 0
+      responses:
+        '200':
+          description: Item data for editing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemEditGetDataResponse'
+    post:
+      summary: Edits an existing item
+      tags:
+        - Item
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ItemEditRequest'
+      responses:
+        '200':
+          description: Item edited successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemEditResponse'
+  /api/Item/MultipleDelete:
+    post:
+      summary: Deletes multiple items or instances
+      tags:
+        - Item
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MultipleDeleteRequest'
+      responses:
+        '200':
+          description: Items deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MultipleDeleteResponse'
+  /api/Item/ChangePartialCompleteStatus:
+    post:
+      summary: Changes the partial completion status of an item instance or a specific schedule item.
+      tags:
+        - Item
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangePartialCompleteStatusRequest'
+      responses:
+        '200':
+          description: Partial completion status changed successfully. Returns updated item info and schedule diff.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangePartialCompleteStatusResponse'
+  /api/tag/list:
+    get:
+      summary: Gets the list of tags
+      tags:
+        - Tag
+      responses:
+        '200':
+          description: List of tags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagListResponse'
+  /api/Calendar/Info:
+    get:
+      summary: Gets information about the user's calendars and calendar accounts.
+      tags:
+        - Calendar
+      responses:
+        '200':
+          description: Successfully retrieved calendar and account information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarInfoResponse'
+
