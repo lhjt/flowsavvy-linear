@@ -5,3 +5,4 @@ pnpm = "10.10.0"
 
 [tasks.dev]
 run = "tsx src/index.ts"
+dir = "./apps/server"

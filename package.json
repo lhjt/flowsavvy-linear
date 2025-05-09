@@ -1,26 +1,12 @@
 {
-  "name": "flowsavvy-linear",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "flowsavvy-linear-monorepo",
+  "private": true,
+  "description": "Monorepo for FlowSavvy sync system",
   "scripts": {
-    "dev": "nodemon src/index.ts",
-    "start": "npx tsc && node dist/index.js"
-  },
-  "keywords": [],
-  "author": "@ChrisvanChip",
-  "license": "ISC",
-  "dependencies": {
-    "@hono/node-server": "1.14.1",
-    "axios": "1.9.0",
-    "dotenv": "16.5.0",
-    "form-data": "4.0.2",
-    "hono": "^4.7.8"
+    "server:dev": "pnpm --filter flowsavvy-linear dev",
+    "server:start": "pnpm --filter flowsavvy-linear start"
   },
   "devDependencies": {
-    "@types/node": "22.15.12",
-    "nodemon": "3.1.10",
-    "ts-node": "10.9.2",
-    "typescript": "5.8.3"
+    "pnpm": "^10.10.0"
   }
 }
