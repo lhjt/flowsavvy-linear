@@ -8,12 +8,13 @@
     "start": "npx tsc && node dist/index.js"
   },
   "keywords": [],
-  "author": "@ChrisvanChip",
+  "author": "@lhjt",
   "license": "ISC",
   "dependencies": {
     "@hono/node-server": "1.14.1",
     "axios": "1.9.0",
     "dotenv": "16.5.0",
+    "flowsavvy-sdk": "workspace:*",
     "form-data": "4.0.2",
     "hono": "^4.7.8"
   },
