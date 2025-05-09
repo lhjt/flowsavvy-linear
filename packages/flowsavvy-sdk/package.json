@@ -1,0 +1,19 @@
+{
+  "name": "flowsavvy-sdk",
+  "version": "v1-SNAPSHOT.202505092200",
+  "description": "OpenAPI client for flowsavvy-sdk",
+  "author": "OpenAPI-Generator",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GIT_USER_ID/GIT_REPO_ID.git"
+  },
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^4.0 || ^5.0"
+  }
+}
