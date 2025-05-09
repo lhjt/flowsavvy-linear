@@ -1,12 +1,26 @@
 import FormData from "form-data";
 import Task from "../../classes/Task";
 import { FlowSavvyApiClient } from "./FlowSavvyApiClient";
+import { InboxApi, ItemApi, ScheduleApi } from "flowsavvy-sdk";
 
 class FlowSavvy {
   public apiClient: FlowSavvyApiClient;
+  private scheduleApi: ScheduleApi;
+  private inboxApi: InboxApi;
+  private itemApi: ItemApi;
 
   constructor() {
     this.apiClient = new FlowSavvyApiClient();
+
+    this.scheduleApi = new ScheduleApi().withPreMiddleware(
+      this.apiClient._preMiddleware
+    );
+    this.inboxApi = new InboxApi().withPreMiddleware(
+      this.apiClient._preMiddleware
+    );
+    this.itemApi = new ItemApi().withPreMiddleware(
+      this.apiClient._preMiddleware
+    );
   }
 
   public async initialize(): Promise<void> {
@@ -120,21 +134,15 @@ class FlowSavvy {
   }
 
   async forceRecalculate(): Promise<void> {
-    const formData = new FormData();
-    formData.append("force", "true");
+    const response = await this.scheduleApi.apiScheduleRecalculatePostRaw({
+      contentType: "schedule",
+      force: true,
+      isResolutionCenterOpen: false,
+      startDate: "2025-05-02",
+    });
 
-    try {
-      await this.apiClient.request(
-        "POST",
-        "Schedule/Recalculate",
-        formData,
-        true, // requiresCsrfToken
-        formData.getHeaders() // Additional headers from FormData
-      );
-      console.log("Force recalculate command sent successfully.");
-    } catch (error) {
-      console.error("Error forcing recalculation:", error);
-      throw error;
+    if (!response.raw.ok) {
+      throw new Error("Failed to force recalculate");
     }
   }
 }

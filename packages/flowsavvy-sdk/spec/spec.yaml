@@ -250,7 +250,6 @@ components:
           example: "schedule"
         startDate:
           type: string
-          format: date
           example: "2025-05-02"
         isResolutionCenterOpen:
           type: boolean

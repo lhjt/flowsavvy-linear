@@ -45,6 +45,8 @@ app.use("*", async (c: Context, next: Next) => {
     const linearRoutes = setupRoutes(flowSavvyClient);
     app.route("/", linearRoutes);
 
+    await flowSavvyClient.forceRecalculate();
+
     serve({
       fetch: app.fetch,
       port: Number(port),

@@ -73,7 +73,7 @@ export interface ApiScheduleLogAmplitudeEventPostRequest {
 
 export interface ApiScheduleRecalculatePostRequest {
     contentType: string;
-    startDate: Date;
+    startDate: string;
     isResolutionCenterOpen: boolean;
     force: boolean;
 }

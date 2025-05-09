@@ -29,7 +29,7 @@ export class FlowSavvyApiClient {
   private scheduleApi: ScheduleApi;
   private accountApi: AccountApi;
 
-  private _preMiddleware = async (
+  public _preMiddleware = async (
     context: RequestContext
   ): Promise<void | FetchParams> => {
     // Add in the CSRF token to the request
