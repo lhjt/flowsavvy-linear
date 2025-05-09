@@ -52,7 +52,7 @@ export const verifyLinearSignature: MiddlewareHandler = async (
 
   for (const currentFullSecret of secrets) {
     const match = currentFullSecret.match(/^C(\d+)_(.*)$/);
-    const currentSecretPortion = match ? match[2] : currentFullSecret;
+    const currentSecretPortion = match ? match[2]! : currentFullSecret;
 
     const generatedSignature = crypto
       .createHmac("sha256", currentSecretPortion)

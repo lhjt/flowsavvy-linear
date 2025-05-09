@@ -1,7 +1,14 @@
 import axios, { AxiosResponse, AxiosRequestConfig } from "axios";
-import FormData from "form-data"; // FormData is used by a consumer, but data is passed as 'any'. Actual form data headers are passed by consumer.
+import FormData from "form-data";
 import dotenv from "dotenv";
 import assert from "node:assert";
+import {
+  AccountApi,
+  Configuration,
+  FetchParams,
+  RequestContext,
+  ScheduleApi,
+} from "flowsavvy-sdk";
 
 dotenv.config();
 
@@ -13,15 +20,32 @@ assert(EMAIL, "[env variables] EMAIL is required");
 assert(PASSWORD, "[env variables] PASSWORD is required");
 assert(TIMEZONE, "[env variables] TIMEZONE is required");
 
-const BASE_URL = "https://my.flowsavvy.app/api/";
+const BASE_URL = "https://my.flowsavvy.app/api";
 
 export class FlowSavvyApiClient {
   private cookies: Map<string, string> = new Map();
   private csrfToken: string = "";
   private isInitialized = false;
+  private scheduleApi: ScheduleApi;
+  private accountApi: AccountApi;
+
+  private _preMiddleware = async (
+    context: RequestContext
+  ): Promise<void | FetchParams> => {
+    // Add in the CSRF token to the request
+    const headerMap = new Headers(context.init.headers);
+    headerMap.set("x-csrf-token", this.csrfToken);
+    headerMap.set("Cookie", this.getCookieHeaderString());
+    context.init.headers = headerMap;
+  };
 
   constructor() {
     // Credentials are read from process.env
+    const config = new Configuration({ basePath: "https://my.flowsavvy.app" });
+    this.scheduleApi = new ScheduleApi(config);
+    this.accountApi = new AccountApi(config).withPreMiddleware(
+      this._preMiddleware
+    );
   }
 
   public async initialize(): Promise<void> {
@@ -44,9 +68,9 @@ export class FlowSavvyApiClient {
   private updateCookies(setCookieHeader: string[] | undefined): void {
     if (!setCookieHeader) return;
     setCookieHeader.forEach((cookieStr) => {
-      const parts = cookieStr.split(";")[0].split("="); // Get 'name=value'
+      const parts = cookieStr.split(";")[0]!.split("="); // Get 'name=value'
       if (parts.length >= 2) {
-        const name = parts[0];
+        const name = parts[0]!;
         const value = parts.slice(1).join("=");
         this.cookies.set(name, value);
       }
@@ -61,27 +85,28 @@ export class FlowSavvyApiClient {
   }
 
   private async _refreshAntiForgeryToken(): Promise<void> {
-    const response = await axios.get(BASE_URL + "Schedule/AntiForgeryToken", {
-      headers: { Cookie: this.getCookieHeaderString() },
-      validateStatus: () => true, // Handle all statuses manually for this call
-    });
+    const response = await this.scheduleApi.apiScheduleAntiForgeryTokenGetRaw({
+      headers: [["Cookie", this.getCookieHeaderString()]],
+    }); // Type assertion for initOverrides
 
-    if (response.status !== 200) {
+    if (response.raw.status !== 200) {
       throw new Error(
-        `Failed to refresh anti-forgery token. Status: ${response.status}`
+        `Failed to refresh anti-forgery token. Status: ${response.raw.status}`
       );
     }
 
-    const cookiesFromResponse = response.headers["set-cookie"] as
-      | string[]
-      | undefined;
-    this.updateCookies(cookiesFromResponse);
+    const cookiesFromResponse = response.raw.headers.get("set-cookie"); // Fetch API returns string | null
+    if (cookiesFromResponse) {
+      // set-cookie can be multiple headers, but .get() concatenates them or returns one.
+      this.updateCookies(cookiesFromResponse.split(", ")); // Attempt to split if multiple are comma-separated
+    }
 
-    const tokenHtml = response.data;
+    const tokenHtml = await response.value(); // .value() should give the string directly
+
     const regex =
       /<input name="__RequestVerificationToken" type="hidden" value="(.*)" \/>/g;
     const match = regex.exec(tokenHtml);
-    const requestVerificationToken = match ? match[1] : "";
+    const requestVerificationToken = match ? match[1]! : "";
 
     if (!requestVerificationToken) {
       console.warn(
@@ -94,35 +119,23 @@ export class FlowSavvyApiClient {
   private async _login(): Promise<void> {
     await this._refreshAntiForgeryToken(); // Get initial CSRF token and cookies
 
-    const formData = new FormData();
-    formData.append("Email", EMAIL!);
-    formData.append("Password", PASSWORD!);
-    formData.append("clientTimeZone", TIMEZONE!);
+    const response = await this.accountApi.apiAccountLoginPostRaw({
+      email: EMAIL!,
+      password: PASSWORD!,
+      clientTimeZone: TIMEZONE!,
+    });
 
-    const config: AxiosRequestConfig = {
-      headers: {
-        ...formData.getHeaders(),
-        "x-csrf-token": this.csrfToken,
-        Cookie: this.getCookieHeaderString(),
-      },
-      validateStatus: () => true, // Handle all statuses manually
-    };
-
-    const response = await axios.post(
-      BASE_URL + "Account/Login",
-      formData,
-      config
-    );
-
-    if (response.status !== 200 || response.data.success !== true) {
+    if (response.raw.status !== 200 || response.raw.ok !== true) {
       throw new Error(
-        `Login failed. Status: ${response.status}. Response: ${JSON.stringify(
-          response.data
+        `Login failed. Status: ${
+          response.raw.status
+        }. Response: ${JSON.stringify(
+          response.raw.body
         )}. Recheck your credentials or API response.`
       );
     }
 
-    const loginCookies = response.headers["set-cookie"] as string[] | undefined;
+    const loginCookies = response.raw.headers.getSetCookie();
     this.updateCookies(loginCookies);
   }
 
