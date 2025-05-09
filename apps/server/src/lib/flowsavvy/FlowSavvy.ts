@@ -1,5 +1,5 @@
 import FormData from "form-data";
-import Task from "./Task";
+import Task from "../../classes/Task";
 import { FlowSavvyApiClient } from "./FlowSavvyApiClient";
 
 class FlowSavvy {

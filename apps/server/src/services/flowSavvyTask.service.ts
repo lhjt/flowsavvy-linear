@@ -1,4 +1,4 @@
-import FlowSavvy from "../classes/FlowSavvy";
+import FlowSavvy from "../lib/flowsavvy/FlowSavvy";
 import Task from "../classes/Task";
 import FormData from "form-data";
 import { LinearWebhookData } from "../types/linear.types";

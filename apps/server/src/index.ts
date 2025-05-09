@@ -2,7 +2,7 @@ import { Hono, Next } from "hono";
 import { serve } from "@hono/node-server";
 import setupRoutes from "./routes";
 import { Context } from "hono";
-import FlowSavvy from "./classes/FlowSavvy";
+import FlowSavvy from "./lib/flowsavvy/FlowSavvy";
 
 declare module "http" {
   export interface IncomingMessage {

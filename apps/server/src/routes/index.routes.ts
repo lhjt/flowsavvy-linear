@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import FlowSavvy from "../classes/FlowSavvy";
+import FlowSavvy from "../lib/flowsavvy/FlowSavvy";
 // FormData and Task are now primarily used within the service
 // import FormData from 'form-data';
 // import Task from "../classes/Task";
