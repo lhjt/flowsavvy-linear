@@ -146,7 +146,7 @@ export interface ItemCore {
      */
     allDay?: boolean;
     /**
-     * Repeat type (e.g., Never, Daily, Weekly).
+     * Repeat type (e.g., Never, Daily, Weekly, Yearly).
      * @type {string}
      * @memberof ItemCore
      */

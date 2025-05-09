@@ -46,7 +46,7 @@ components:
           type: string
           format: html # Can be HTML content
           description: Notes for the item.
-          example: "<p>Example notes for the task.</p>"
+          example: "<p>Example notes for the task. Call <a href=\"tel:+61400000000\">+61400000000</a> or email <a href=\"mailto:contact@example.com\">contact@example.com</a>. Event details: <a href=\"https://www.example.com/events/EVENT_ID_PLACEHOLDER/\">Event Link</a></p>"
         DueDateTime:
           type: string
           format: date-time
@@ -79,7 +79,7 @@ components:
         Title:
           type: string
           description: Title of the item.
-          example: "Example Task Title"
+          example: "Example Task Title for John Doe"
         ItemType:
           type: string
           description: Type of the item (e.g., task, event).
@@ -122,7 +122,7 @@ components:
           example: false
         RepeatType:
           type: string
-          description: Repeat type (e.g., Never, Daily, Weekly).
+          description: Repeat type (e.g., Never, Daily, Weekly, Yearly).
           example: "Never"
         Interval:
           type: integer
@@ -196,7 +196,7 @@ components:
         Location:
           type: string
           nullable: true
-          example: ""
+          example: "Example Venue, 123 Main St, Example City"
 
     ItemCreateRequest:
       allOf:
@@ -418,7 +418,7 @@ components:
         scheduleItemDiff:
           $ref: '#/components/schemas/ScheduleItemDiff'
 
-    ItemFull: # Based on GET /api/Item/Edit response and other detailed item views
+    ItemFull: # Based on GET /api/Item/Edit response and other detailed item views like search
       allOf:
         - $ref: '#/components/schemas/ItemCore'
       properties:
@@ -951,8 +951,6 @@ components:
             $ref: '#/components/schemas/ItemFull'
           example:
             "0":
-              # Example of ItemFull would go here, too verbose for this spot
-              # See ItemFull schema for structure
               id: 9911002
               Title: "Test task"
               Completed: true
@@ -972,10 +970,8 @@ components:
             $ref: '#/components/schemas/ItemShiftInfoMapValue'
           example:
             "9911002": # Item ID as key
-              # ItemShiftInfoMapValue example here
               oldInstanceIdsToNewItems:
                 "0": # Instance ID as key
-                  # ItemFull example here
                   id: 9911002
                   Title: "Test task"
                   Completed: true
@@ -1000,6 +996,95 @@ components:
         defaultCalendarID:
           type: integer
           example: 110833
+
+    SearchResponseData:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemFull'
+          example:
+            - id: 6617654
+              InstanceID: 0
+              Title: "Example Person's Birthday"
+              Completed: false
+              BufferTimeBeforeHours: 0
+              BufferTimeBeforeMinutes: 0
+              BufferTimeAfterHours: 0
+              BufferTimeAfterMinutes: 0
+              ProgressHours: 0
+              ProgressMinutes: 0
+              isAutoIgnored: false
+              Notes: ""
+              AccessLevel: 1
+              DontStartUntil: "2003-08-08T00:00:00"
+              minLengthTotalMinutes: 15
+              Location: null
+              AllDay: true
+              FixedTime: true
+              Busy: false
+              ItemType: "event"
+              Color: null
+              CustomColor: null
+              Changed: false
+              tagIds: []
+              upstreamItemInfos: []
+              downstreamItemInfos: []
+              priority: 1
+              SortTime: "2003-08-08T00:00:00"
+              ParentItemID: null
+              ParentItem: null
+              CalendarID: 110833
+              TimeProfileID: 266524
+              LastMovedUtc: "2024-12-13T13:10:15.727208"
+              StartDateTime: "2003-08-08T00:00:00"
+              EndDateTime: "2003-08-08T00:00:00"
+              DueDateTime: "2003-08-08T00:00:00"
+              TimeZone: "Australia/Sydney"
+              RepeatType: "Yearly"
+              Interval: 1
+              Sunday: false
+              Monday: false
+              Tuesday: false
+              Wednesday: false
+              Thursday: false
+              Friday: false
+              Saturday: false
+              MonthlyType: "Each..."
+              Dates: ""
+              MonthOrdinal: 0
+              WeekDay: 0
+              EndRepeatType: "Never"
+              EndRepeatDate: "2003-08-08T00:00:00"
+              NumOccurrences: 1
+        oldCompletedTasksHidden:
+          type: boolean
+          example: false
+        hasNextPage:
+          type: boolean
+          example: true
+        hasPreviousPage:
+          type: boolean
+          example: false
+        repeatingAutoScheduledTaskIds:
+          type: array
+          items:
+            type: integer
+          nullable: true
+          example: null
+        tasksMissingDeadlines:
+          type: object
+          additionalProperties:
+            type: boolean
+          nullable: true
+          example: null
+
+    SearchResponseWrapper:
+      type: object
+      properties:
+        searchResponse:
+          $ref: '#/components/schemas/SearchResponseData'
 
   securitySchemes:
     cookieAuthIdentity:
@@ -1364,6 +1449,54 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChangePartialCompleteStatusResponse'
+  /api/item/search:
+    get:
+      summary: Searches for items based on a query string and other filters.
+      tags:
+        - Item
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The search term to query items by. Can be "all" to fetch many items.
+          example: "all"
+        - name: searchCompletedTasks
+          in: query
+          required: true
+          schema:
+            type: boolean
+          description: Whether to include completed tasks in the search results.
+          example: false
+        - name: getItemsAfterCursor
+          in: query
+          required: true
+          schema:
+            type: boolean
+          description: Flag for pagination, typically true for initial load or next page.
+          example: true
+        - name: takeFirst
+          in: query
+          required: true
+          schema:
+            type: boolean
+          description: Flag for pagination, typically true for initial load.
+          example: true
+        - name: batchSize
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: The number of items to return per page.
+          example: 50
+      responses:
+        '200':
+          description: A list of items matching the search criteria, along with pagination info.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponseWrapper'
   /api/tag/list:
     get:
       summary: Gets the list of tags
@@ -1388,4 +1521,3 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CalendarInfoResponse'
-

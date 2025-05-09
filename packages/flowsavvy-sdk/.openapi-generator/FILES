@@ -43,6 +43,8 @@ src/models/ScheduleItemData.ts
 src/models/ScheduleItemDiff.ts
 src/models/ScheduleResponseData.ts
 src/models/SchedulingStatusInfo.ts
+src/models/SearchResponseData.ts
+src/models/SearchResponseWrapper.ts
 src/models/Subscription.ts
 src/models/SyncInfo.ts
 src/models/Tag.ts

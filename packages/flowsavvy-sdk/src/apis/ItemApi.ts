@@ -20,6 +20,7 @@ import type {
   ItemEditGetDataResponse,
   ItemEditResponse,
   MultipleDeleteResponse,
+  SearchResponseWrapper,
 } from '../models/index';
 import {
     ChangePartialCompleteStatusResponseFromJSON,
@@ -32,6 +33,8 @@ import {
     ItemEditResponseToJSON,
     MultipleDeleteResponseFromJSON,
     MultipleDeleteResponseToJSON,
+    SearchResponseWrapperFromJSON,
+    SearchResponseWrapperToJSON,
 } from '../models/index';
 
 export interface ApiItemChangePartialCompleteStatusPostRequest {
@@ -140,6 +143,14 @@ export interface ApiItemEditPostRequest {
 export interface ApiItemMultipleDeletePostRequest {
     serializedItemIdToInstanceIdsDict: string;
     deleteType: string;
+}
+
+export interface ApiItemSearchGetRequest {
+    query: string;
+    searchCompletedTasks: boolean;
+    getItemsAfterCursor: boolean;
+    takeFirst: boolean;
+    batchSize: number;
 }
 
 /**
@@ -782,6 +793,91 @@ export class ItemApi extends runtime.BaseAPI {
      */
     async apiItemMultipleDeletePost(requestParameters: ApiItemMultipleDeletePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MultipleDeleteResponse> {
         const response = await this.apiItemMultipleDeletePostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Searches for items based on a query string and other filters.
+     */
+    async apiItemSearchGetRaw(requestParameters: ApiItemSearchGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SearchResponseWrapper>> {
+        if (requestParameters['query'] == null) {
+            throw new runtime.RequiredError(
+                'query',
+                'Required parameter "query" was null or undefined when calling apiItemSearchGet().'
+            );
+        }
+
+        if (requestParameters['searchCompletedTasks'] == null) {
+            throw new runtime.RequiredError(
+                'searchCompletedTasks',
+                'Required parameter "searchCompletedTasks" was null or undefined when calling apiItemSearchGet().'
+            );
+        }
+
+        if (requestParameters['getItemsAfterCursor'] == null) {
+            throw new runtime.RequiredError(
+                'getItemsAfterCursor',
+                'Required parameter "getItemsAfterCursor" was null or undefined when calling apiItemSearchGet().'
+            );
+        }
+
+        if (requestParameters['takeFirst'] == null) {
+            throw new runtime.RequiredError(
+                'takeFirst',
+                'Required parameter "takeFirst" was null or undefined when calling apiItemSearchGet().'
+            );
+        }
+
+        if (requestParameters['batchSize'] == null) {
+            throw new runtime.RequiredError(
+                'batchSize',
+                'Required parameter "batchSize" was null or undefined when calling apiItemSearchGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['query'] != null) {
+            queryParameters['query'] = requestParameters['query'];
+        }
+
+        if (requestParameters['searchCompletedTasks'] != null) {
+            queryParameters['searchCompletedTasks'] = requestParameters['searchCompletedTasks'];
+        }
+
+        if (requestParameters['getItemsAfterCursor'] != null) {
+            queryParameters['getItemsAfterCursor'] = requestParameters['getItemsAfterCursor'];
+        }
+
+        if (requestParameters['takeFirst'] != null) {
+            queryParameters['takeFirst'] = requestParameters['takeFirst'];
+        }
+
+        if (requestParameters['batchSize'] != null) {
+            queryParameters['batchSize'] = requestParameters['batchSize'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["x-csrf-token"] = await this.configuration.apiKey("x-csrf-token"); // csrfTokenHeader authentication
+        }
+
+        const response = await this.request({
+            path: `/api/item/search`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => SearchResponseWrapperFromJSON(jsonValue));
+    }
+
+    /**
+     * Searches for items based on a query string and other filters.
+     */
+    async apiItemSearchGet(requestParameters: ApiItemSearchGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SearchResponseWrapper> {
+        const response = await this.apiItemSearchGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

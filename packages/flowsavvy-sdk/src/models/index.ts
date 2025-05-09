@@ -33,6 +33,8 @@ export * from './ScheduleItemData';
 export * from './ScheduleItemDiff';
 export * from './ScheduleResponseData';
 export * from './SchedulingStatusInfo';
+export * from './SearchResponseData';
+export * from './SearchResponseWrapper';
 export * from './Subscription';
 export * from './SyncInfo';
 export * from './Tag';
