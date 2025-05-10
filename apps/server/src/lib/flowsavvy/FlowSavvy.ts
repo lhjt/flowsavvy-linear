@@ -1,7 +1,12 @@
 import FormData from "form-data";
 import Task from "../../classes/Task";
 import { FlowSavvyApiClient } from "./FlowSavvyApiClient";
-import { InboxApi, ItemApi, ScheduleApi } from "flowsavvy-sdk";
+import {
+  InboxApi,
+  ItemApi,
+  ItemApiApiItemCreatePostRequest,
+  ScheduleApi,
+} from "flowsavvy-sdk";
 
 class FlowSavvy {
   public apiClient: FlowSavvyApiClient;
@@ -12,15 +17,9 @@ class FlowSavvy {
   constructor() {
     this.apiClient = new FlowSavvyApiClient();
 
-    this.scheduleApi = new ScheduleApi().withPreMiddleware(
-      this.apiClient._preMiddleware
-    );
-    this.inboxApi = new InboxApi().withPreMiddleware(
-      this.apiClient._preMiddleware
-    );
-    this.itemApi = new ItemApi().withPreMiddleware(
-      this.apiClient._preMiddleware
-    );
+    this.scheduleApi = new ScheduleApi();
+    this.inboxApi = new InboxApi();
+    this.itemApi = new ItemApi();
   }
 
   public async initialize(): Promise<void> {
@@ -69,18 +68,23 @@ class FlowSavvy {
     }
   }
 
-  async createTask(taskData: FormData): Promise<void> {
+  async createTask(taskData: Task): Promise<void> {
+    console.log("[ApiClient] Creating task...");
     try {
-      await this.apiClient.request(
-        "POST",
-        "Item/Create",
-        taskData,
-        true, // requiresCsrfToken
-        taskData.getHeaders()
+      const response = await this.itemApi.apiItemCreatePost(
+        taskData.productAPIFormat(),
+        {
+          headers: this.apiClient.getHeaders(),
+        }
       );
-      console.log("Task created successfully via FlowSavvy class.");
-    } catch (error) {
-      console.error("Error creating task via FlowSavvy class:", error);
+
+      if (response.status !== 200) {
+        console.error(response.data);
+        throw new Error("Failed to create task");
+      }
+      console.log("[ApiClient] Task created successfully.");
+    } catch (error: unknown) {
+      console.error("[ApiClient] Error creating task:", error);
       throw error;
     }
   }
@@ -134,16 +138,18 @@ class FlowSavvy {
   }
 
   async forceRecalculate(): Promise<void> {
-    const response = await this.scheduleApi.apiScheduleRecalculatePostRaw({
+    const response = await this.scheduleApi.apiScheduleRecalculatePost({
       contentType: "schedule",
       force: true,
       isResolutionCenterOpen: false,
       startDate: "2025-05-02",
     });
 
-    if (!response.raw.ok) {
+    if (response.status !== 200) {
       throw new Error("Failed to force recalculate");
     }
+
+    console.log("[ApiClient] Force recalculate command sent successfully.");
   }
 }
 

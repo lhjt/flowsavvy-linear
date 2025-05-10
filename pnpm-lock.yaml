@@ -47,7 +47,14 @@ importers:
         version: 5.8.3
 
   packages/flowsavvy-sdk:
+    dependencies:
+      axios:
+        specifier: ^1.6.1
+        version: 1.9.0
     devDependencies:
+      '@types/node':
+        specifier: 12.11.5 - 12.20.42
+        version: 12.20.42
       typescript:
         specifier: ^4.0 || ^5.0
         version: 5.8.3
@@ -85,6 +92,9 @@ packages:
 
   '@tsconfig/node16@1.0.4':
     resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
+
+  '@types/node@12.20.42':
+    resolution: {integrity: sha512-aI3/oo5DzyiI5R/xAhxxRzfZlWlsbbqdgxfTPkqu/Zt+23GXiJvMCyPJT4+xKSXOnLqoL8jJYMLTwvK2M3a5hw==}
 
   '@types/node@22.15.12':
     resolution: {integrity: sha512-K0fpC/ZVeb8G9rm7bH7vI0KAec4XHEhBam616nVJCV51bKzJ6oA3luG4WdKoaztxe70QaNjS/xBmcDLmr4PiGw==}
@@ -392,6 +402,8 @@ snapshots:
   '@tsconfig/node14@1.0.3': {}
 
   '@tsconfig/node16@1.0.4': {}
+
+  '@types/node@12.20.42': {}
 
   '@types/node@22.15.12':
     dependencies:

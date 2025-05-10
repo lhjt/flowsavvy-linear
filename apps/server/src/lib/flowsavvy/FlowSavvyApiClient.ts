@@ -1,14 +1,8 @@
-import axios, { AxiosResponse, AxiosRequestConfig } from "axios";
+import axios, { AxiosResponse, AxiosRequestConfig, request } from "axios";
 import FormData from "form-data";
 import dotenv from "dotenv";
 import assert from "node:assert";
-import {
-  AccountApi,
-  Configuration,
-  FetchParams,
-  RequestContext,
-  ScheduleApi,
-} from "flowsavvy-sdk";
+import { AccountApi, Configuration, ScheduleApi } from "flowsavvy-sdk";
 
 dotenv.config();
 
@@ -20,7 +14,7 @@ assert(EMAIL, "[env variables] EMAIL is required");
 assert(PASSWORD, "[env variables] PASSWORD is required");
 assert(TIMEZONE, "[env variables] TIMEZONE is required");
 
-const BASE_URL = "https://my.flowsavvy.app/api";
+const BASE_URL = "https://my.flowsavvy.app/api/";
 
 export class FlowSavvyApiClient {
   private cookies: Map<string, string> = new Map();
@@ -29,23 +23,19 @@ export class FlowSavvyApiClient {
   private scheduleApi: ScheduleApi;
   private accountApi: AccountApi;
 
-  public _preMiddleware = async (
-    context: RequestContext
-  ): Promise<void | FetchParams> => {
-    // Add in the CSRF token to the request
-    const headerMap = new Headers(context.init.headers);
-    headerMap.set("x-csrf-token", this.csrfToken);
-    headerMap.set("Cookie", this.getCookieHeaderString());
-    context.init.headers = headerMap;
-  };
+  public getHeaders() {
+    return {
+      Cookie: this.getCookieHeaderString(),
+      "x-csrf-token": this.csrfToken,
+      Host: "my.flowsavvy.app",
+    };
+  }
 
   constructor() {
     // Credentials are read from process.env
     const config = new Configuration({ basePath: "https://my.flowsavvy.app" });
     this.scheduleApi = new ScheduleApi(config);
-    this.accountApi = new AccountApi(config).withPreMiddleware(
-      this._preMiddleware
-    );
+    this.accountApi = new AccountApi(config);
   }
 
   public async initialize(): Promise<void> {
@@ -85,23 +75,24 @@ export class FlowSavvyApiClient {
   }
 
   private async _refreshAntiForgeryToken(): Promise<void> {
-    const response = await this.scheduleApi.apiScheduleAntiForgeryTokenGetRaw({
-      headers: [["Cookie", this.getCookieHeaderString()]],
-    }); // Type assertion for initOverrides
+    const response = await this.scheduleApi.apiScheduleAntiForgeryTokenGet({
+      headers: {
+        Cookie: this.getCookieHeaderString(),
+      },
+    });
 
-    if (response.raw.status !== 200) {
+    if (response.status !== 200) {
       throw new Error(
-        `Failed to refresh anti-forgery token. Status: ${response.raw.status}`
+        `Failed to refresh anti-forgery token. Status: ${response.status}`
       );
     }
 
-    const cookiesFromResponse = response.raw.headers.get("set-cookie"); // Fetch API returns string | null
+    const cookiesFromResponse = response.headers["set-cookie"];
     if (cookiesFromResponse) {
-      // set-cookie can be multiple headers, but .get() concatenates them or returns one.
-      this.updateCookies(cookiesFromResponse.split(", ")); // Attempt to split if multiple are comma-separated
+      this.updateCookies(cookiesFromResponse);
     }
 
-    const tokenHtml = await response.value(); // .value() should give the string directly
+    const tokenHtml = response.data; // .value() should give the string directly
 
     const regex =
       /<input name="__RequestVerificationToken" type="hidden" value="(.*)" \/>/g;
@@ -119,23 +110,24 @@ export class FlowSavvyApiClient {
   private async _login(): Promise<void> {
     await this._refreshAntiForgeryToken(); // Get initial CSRF token and cookies
 
-    const response = await this.accountApi.apiAccountLoginPostRaw({
-      email: EMAIL!,
-      password: PASSWORD!,
-      clientTimeZone: TIMEZONE!,
-    });
+    const response = await this.accountApi.apiAccountLoginPost(
+      {
+        Email: EMAIL!,
+        Password: PASSWORD!,
+        clientTimeZone: TIMEZONE!,
+      },
+      { headers: this.getHeaders() }
+    );
 
-    if (response.raw.status !== 200 || response.raw.ok !== true) {
+    if (response.status !== 200) {
       throw new Error(
-        `Login failed. Status: ${
-          response.raw.status
-        }. Response: ${JSON.stringify(
-          response.raw.body
+        `Login failed. Status: ${response.status}. Response: ${JSON.stringify(
+          response.data
         )}. Recheck your credentials or API response.`
       );
     }
 
-    const loginCookies = response.raw.headers.getSetCookie();
+    const loginCookies = response.headers["set-cookie"];
     this.updateCookies(loginCookies);
   }
 

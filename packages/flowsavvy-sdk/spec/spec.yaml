@@ -49,23 +49,19 @@ components:
           example: "<p>Example notes for the task. Call <a href=\"tel:+61400000000\">+61400000000</a> or email <a href=\"mailto:contact@example.com\">contact@example.com</a>. Event details: <a href=\"https://www.example.com/events/EVENT_ID_PLACEHOLDER/\">Event Link</a></p>"
         DueDateTime:
           type: string
-          format: date-time
           nullable: true
           description: Due date and time for the item.
           example: "2025-05-09T23:59:00"
         StartDateTime:
           type: string
-          format: date-time
           description: Start date and time for the item.
           example: "2025-05-09T19:00:00"
         EndDateTime:
           type: string
-          format: date-time
           description: End date and time for the item.
           example: "2025-05-09T20:30:00"
         DontStartUntil:
           type: string
-          format: date-time
           description: Do not start until this date and time.
           example: "0001-01-01T00:00:00"
         TimeZone:
@@ -166,7 +162,6 @@ components:
           example: "Never"
         EndRepeatDate:
           type: string
-          format: date-time
           example: "2025-05-16T00:00:00"
         NumOccurrences:
           type: integer

@@ -98,12 +98,7 @@ export class FlowSavvyTaskService {
       newTask.TimeProfileID = timeProfileId;
     }
 
-    let createFormData = new FormData();
-    for (let [key, value] of Object.entries(newTask)) {
-      if (value !== undefined && value !== null)
-        createFormData.append(key, String(value));
-    }
-    await this.flowSavvyClient.createTask(createFormData);
+    await this.flowSavvyClient.createTask(newTask);
     await this.flowSavvyClient.forceRecalculate();
   }
 }
